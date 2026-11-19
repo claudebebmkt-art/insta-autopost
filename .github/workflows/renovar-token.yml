@@ -1,8 +1,8 @@
 name: Renovar token do Instagram
 
+# O token atual (system-user) não expira, então este workflow só roda manualmente.
+# Só use se um dia trocar por um token de 60 dias (precisa do secret GH_PAT).
 on:
-  schedule:
-    - cron: "0 12 1,15 * *"   # dia 1 e 15 de cada mês (token dura 60 dias)
   workflow_dispatch:
 
 jobs:
