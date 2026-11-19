@@ -36,7 +36,9 @@ POSTS_DIR = ROOT / "posts"
 STATE_FILE = ROOT / "state" / "published.json"
 
 GRAPH_VERSION = os.environ.get("GRAPH_VERSION", "v25.0")
-API = f"https://graph.instagram.com/{GRAPH_VERSION}"
+# O host certo depende do tipo de token; detectamos sozinhos no início.
+HOSTS = ["graph.instagram.com", "graph.facebook.com"]
+API = f"https://{HOSTS[0]}/{GRAPH_VERSION}"
 TZ = ZoneInfo(os.environ.get("TZ_POSTS", "America/Sao_Paulo"))
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
 MAX_TENTATIVAS = 3
@@ -148,8 +150,26 @@ def publicar(post, pasta, base):
     return api("POST", f"{ig}/media_publish", {"creation_id": cid})["id"]
 
 
+def conectar():
+    """Testa o token nos dois hosts da Meta e usa o que funcionar."""
+    global API
+    ig = os.environ["IG_USER_ID"]
+    erros = []
+    for host in HOSTS:
+        API = f"https://{host}/{GRAPH_VERSION}"
+        try:
+            me = api("GET", ig, {"fields": "username"})
+            log(f"Conectado como @{me.get('username')} via {host}")
+            return
+        except RuntimeError as e:
+            erros.append(str(e))
+    sys.exit("Não consegui conectar com o token:\n" + "\n".join(erros))
+
+
 def main():
-    state = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else {}
+    if not DRY_RUN:
+        conectar()
+    state =json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else {}
     agora = datetime.now(timezone.utc)
     base = media_base_url()
     mudou = False
