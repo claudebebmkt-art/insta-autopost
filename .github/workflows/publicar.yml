@@ -1,0 +1,39 @@
+name: Publicar no Instagram
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # confere a cada 15 min (o GitHub pode atrasar alguns minutos)
+  workflow_dispatch:          # botão "Run workflow" pra rodar na hora
+
+concurrency:
+  group: publicar-instagram   # nunca roda dois ao mesmo tempo (evita post duplicado)
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Publicar posts vencidos
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          MEDIA_BASE_URL: ${{ vars.MEDIA_BASE_URL }}
+        run: python scripts/publish.py
+
+      - name: Salvar o que foi publicado
+        if: always()
+        run: |
+          git config user.name "insta-bot"
+          git config user.email "insta-bot@users.noreply.github.com"
+          git add state/published.json 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "estado: posts publicados [skip ci]" && git push)
