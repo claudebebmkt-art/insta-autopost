@@ -1,0 +1,8 @@
+{
+  "quando": "2026-11-20T18:00",
+  "tipo": "reel",
+  "midia": ["video.mp4"],
+  "legenda_arquivo": "legenda.txt",
+  "no_feed": true,
+  "pausado": true
+}
